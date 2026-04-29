@@ -15,5 +15,9 @@ dev = [
   "pytest>=8.2",
 ]
 
+[tool.setuptools.packages.find]
+include = ["chalintrends*"]
+exclude = ["data*", "docs*", "tests*", "scripts*", "output*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
