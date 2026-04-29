@@ -25,7 +25,7 @@ COLUMNS = [
 def load_prices(csv_path: Path) -> pd.DataFrame:
     if not csv_path.exists():
         return pd.DataFrame(columns=COLUMNS)
-    prices = pd.read_csv(csv_path, dtype={"product_id": "string"})
+    prices = pd.read_csv(csv_path, dtype={"product_id": "string", "price_text": "string"})
     return normalize_price_rows(prices)
 
 
@@ -58,14 +58,17 @@ def append_daily_snapshot(
 
     existing = load_prices(csv_path)
     date_text = snapshot_date.isoformat()
-    if not existing.empty and (existing["date"] == date_text).any():
-        return False
 
     daily = pd.DataFrame(rows)
     daily.insert(0, "date", date_text)
     daily["captured_at"] = captured_at.isoformat()
     daily = normalize_price_rows(daily)
 
-    combined = pd.concat([existing, daily], ignore_index=True)
+    if existing.empty:
+        previous_days = existing
+    else:
+        previous_days = existing[existing["date"] != date_text]
+
+    combined = pd.concat([previous_days, daily], ignore_index=True)
     combined.to_csv(csv_path, index=False)
     return True
