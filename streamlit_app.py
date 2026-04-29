@@ -146,6 +146,55 @@ def inject_styles() -> None:
           background: transparent;
         }
 
+        div[data-testid="collapsedControl"],
+        div[data-testid="stSidebarCollapsedControl"] {
+          left: 14px;
+          position: fixed;
+          top: 14px;
+          z-index: 100002;
+        }
+
+        div[data-testid="collapsedControl"] button,
+        div[data-testid="collapsedControl"] button[data-testid="baseButton-headerNoPadding"],
+        div[data-testid="stSidebarCollapsedControl"] button,
+        div[data-testid="stSidebarCollapsedControl"] button[data-testid="baseButton-headerNoPadding"],
+        section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {
+          align-items: center;
+          background: #172033 !important;
+          border: 1px solid rgba(255,250,241,.45) !important;
+          border-radius: 999px !important;
+          box-shadow: 0 12px 28px rgba(23,32,51,.24);
+          color: #fffaf1 !important;
+          display: inline-flex;
+          height: 48px !important;
+          justify-content: center;
+          min-height: 48px !important;
+          min-width: 48px !important;
+          padding: 0 !important;
+          width: 48px !important;
+        }
+
+        div[data-testid="collapsedControl"] button:hover,
+        div[data-testid="collapsedControl"] button[data-testid="baseButton-headerNoPadding"]:hover,
+        div[data-testid="stSidebarCollapsedControl"] button:hover,
+        div[data-testid="stSidebarCollapsedControl"] button[data-testid="baseButton-headerNoPadding"]:hover,
+        section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"]:hover {
+          background: #22304a !important;
+          border-color: rgba(226,193,125,.85) !important;
+          color: #fffaf1 !important;
+        }
+
+        div[data-testid="collapsedControl"] svg,
+        div[data-testid="collapsedControl"] button[data-testid="baseButton-headerNoPadding"] svg,
+        div[data-testid="stSidebarCollapsedControl"] svg,
+        div[data-testid="stSidebarCollapsedControl"] button[data-testid="baseButton-headerNoPadding"] svg,
+        section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] svg {
+          color: #fffaf1 !important;
+          height: 26px !important;
+          stroke-width: 2.4;
+          width: 26px !important;
+        }
+
         section[data-testid="stSidebar"] {
           background:
             linear-gradient(180deg, rgba(255,250,241,.98), rgba(246,241,232,.98)),
@@ -985,6 +1034,32 @@ def inject_styles() -> None:
         }
 
         @media (max-width: 760px) {
+          div[data-testid="collapsedControl"],
+          div[data-testid="stSidebarCollapsedControl"] {
+            left: 12px;
+            top: 12px;
+          }
+
+          div[data-testid="collapsedControl"] button,
+          div[data-testid="collapsedControl"] button[data-testid="baseButton-headerNoPadding"],
+          div[data-testid="stSidebarCollapsedControl"] button,
+          div[data-testid="stSidebarCollapsedControl"] button[data-testid="baseButton-headerNoPadding"],
+          section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] {
+            height: 54px !important;
+            min-height: 54px !important;
+            min-width: 54px !important;
+            width: 54px !important;
+          }
+
+          div[data-testid="collapsedControl"] svg,
+          div[data-testid="collapsedControl"] button[data-testid="baseButton-headerNoPadding"] svg,
+          div[data-testid="stSidebarCollapsedControl"] svg,
+          div[data-testid="stSidebarCollapsedControl"] button[data-testid="baseButton-headerNoPadding"] svg,
+          section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"] svg {
+            height: 30px !important;
+            width: 30px !important;
+          }
+
           .block-container {
             padding-left: .75rem;
             padding-right: .75rem;
@@ -1605,7 +1680,7 @@ st.set_page_config(
     page_title="ChalinTrends",
     page_icon=":material/monitoring:",
     layout="centered",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="auto",
 )
 inject_styles()
 
