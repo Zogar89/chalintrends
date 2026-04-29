@@ -1,0 +1,1 @@
+"""ChalinTrends package."""

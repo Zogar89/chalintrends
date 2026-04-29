@@ -1,0 +1,19 @@
+[project]
+name = "chalintrends"
+version = "0.1.0"
+description = "Personal Streamlit tracker for Chalin Carnes Premium prices."
+requires-python = ">=3.11"
+dependencies = [
+  "altair>=6",
+  "pandas>=2.2",
+  "requests>=2.32",
+  "streamlit>=1.54",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
