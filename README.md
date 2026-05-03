@@ -16,6 +16,15 @@ python -m pip install -e ".[dev]"
 python scripts/update_prices.py
 ```
 
+## Migrate price storage
+
+`data/prices.csv` is stored as one row per day with all products in `items_json`.
+To migrate an older row-per-product CSV:
+
+```powershell
+python scripts/migrate_prices_csv.py
+```
+
 ## Run app
 
 ```powershell

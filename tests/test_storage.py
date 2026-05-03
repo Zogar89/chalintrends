@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 
 import pandas as pd
 
-from chalintrends.storage import COLUMNS, append_daily_snapshot, load_prices
+from chalintrends.storage import COLUMNS, SNAPSHOT_COLUMNS, append_daily_snapshot, load_prices
 
 
 def test_append_daily_snapshot_replaces_existing_snapshot_for_same_date(tmp_path):
@@ -45,6 +45,11 @@ def test_append_daily_snapshot_replaces_existing_snapshot_for_same_date(tmp_path
         captured_at=datetime(2026, 4, 28, 12, 5, tzinfo=timezone.utc),
     )
 
+    raw = pd.read_csv(csv_path)
+    assert raw.columns.tolist() == SNAPSHOT_COLUMNS
+    assert len(raw) == 1
+    assert raw.loc[0, "date"] == "2026-04-28"
+
     df = load_prices(csv_path)
     assert len(df) == 1
     assert df.loc[0, "date"] == "2026-04-28"
@@ -81,6 +86,50 @@ def test_load_prices_migrates_legacy_category_to_source_category(tmp_path):
     assert loaded.loc[0, "category"] == "Vacuno premium"
 
 
+def test_load_prices_reads_snapshot_rows_with_items_json(tmp_path):
+    csv_path = tmp_path / "prices.csv"
+    append_daily_snapshot(
+        csv_path,
+        [
+            {
+                "price_list": "salon",
+                "source_category": "Carnes",
+                "category": "Vacuno medio",
+                "product_id": "asado-id",
+                "product_name": "Asado",
+                "price_text": "15.999",
+                "price": 15999,
+                "source_url": "https://precios.chalincarnespremium.com.ar",
+            },
+            {
+                "price_list": "delivery",
+                "source_category": "Carnes",
+                "category": "Vacuno medio",
+                "product_id": "asado-id",
+                "product_name": "Asado",
+                "price_text": "17.499",
+                "price": 17499,
+                "source_url": "https://precios.chalincarnespremium.com.ar",
+            },
+        ],
+        snapshot_date=date(2026, 4, 28),
+        captured_at=datetime(2026, 4, 28, 12, 0, tzinfo=timezone.utc),
+    )
+
+    raw = pd.read_csv(csv_path)
+    loaded = load_prices(csv_path)
+
+    assert raw.columns.tolist() == SNAPSHOT_COLUMNS
+    assert len(raw) == 1
+    assert len(loaded) == 2
+    assert loaded["date"].tolist() == ["2026-04-28", "2026-04-28"]
+    assert loaded["captured_at"].tolist() == [
+        "2026-04-28T12:00:00+00:00",
+        "2026-04-28T12:00:00+00:00",
+    ]
+    assert loaded["price_list"].tolist() == ["salon", "delivery"]
+
+
 def test_append_daily_snapshot_neutralizes_csv_formula_cells(tmp_path):
     csv_path = tmp_path / "prices.csv"
     append_daily_snapshot(
@@ -101,10 +150,10 @@ def test_append_daily_snapshot_neutralizes_csv_formula_cells(tmp_path):
         captured_at=datetime(2026, 4, 28, 12, 0, tzinfo=timezone.utc),
     )
 
-    raw = pd.read_csv(csv_path, dtype=str)
+    loaded = load_prices(csv_path)
 
-    assert raw.loc[0, "source_category"] == "'\tCarnes"
-    assert raw.loc[0, "product_id"] == "'-formula-id"
-    assert raw.loc[0, "product_name"] == "'=1+1"
-    assert raw.loc[0, "price_text"] == "'+1+1"
-    assert raw.loc[0, "source_url"] == "'@SUM(1,1)"
+    assert loaded.loc[0, "source_category"] == "'\tCarnes"
+    assert loaded.loc[0, "product_id"] == "'-formula-id"
+    assert loaded.loc[0, "product_name"] == "'=1+1"
+    assert loaded.loc[0, "price_text"] == "'+1+1"
+    assert loaded.loc[0, "source_url"] == "'@SUM(1,1)"

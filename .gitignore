@@ -18,3 +18,4 @@ __pycache__/
 *.egg-info/
 output/
 chalintrends/assets/category_icons/
+data/*.long-backup.csv
