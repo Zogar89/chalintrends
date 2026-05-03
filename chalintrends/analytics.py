@@ -61,3 +61,39 @@ def category_daily_prices(df: pd.DataFrame, price_list: str) -> pd.DataFrame:
         .median()
         .rename(columns={"price": "median_price"})
     )
+
+
+def salon_delivery_comparison(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+
+    data = _prepare(df)
+    latest_date = data["date"].max()
+    latest = data[data["date"] == latest_date]
+    comparison = latest.pivot_table(
+        index="product_name",
+        columns="price_list",
+        values="price",
+        aggfunc="last",
+    )
+    comparison = comparison.dropna(how="all")
+    for column in ["salon", "delivery"]:
+        if column not in comparison.columns:
+            comparison[column] = pd.NA
+
+    comparison["delivery_minus_salon"] = comparison["delivery"] - comparison["salon"]
+    comparison["delivery_pct_over_salon"] = (
+        comparison["delivery_minus_salon"] / comparison["salon"].where(comparison["salon"] != 0) * 100
+    )
+    comparison = comparison.sort_values("delivery_minus_salon", ascending=False, na_position="last")
+    return comparison.reset_index()
+
+
+def average_delivery_pct_over_salon(comparison: pd.DataFrame) -> float | None:
+    if comparison.empty or "delivery_pct_over_salon" not in comparison.columns:
+        return None
+
+    values = pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce").dropna()
+    if values.empty:
+        return None
+    return float(values.mean())
