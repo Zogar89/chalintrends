@@ -1753,8 +1753,12 @@ def render_comparison(comparison: pd.DataFrame, max_rows: int | None = None) -> 
 
 def render_delivery_surcharge_card(comparison: pd.DataFrame) -> None:
     average_pct = average_delivery_pct_over_salon(comparison)
-    if "delivery_pct_over_salon" in comparison.columns:
-        compared_items = int(pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce").notna().sum())
+    required_columns = {"salon", "delivery", "delivery_pct_over_salon"}
+    if required_columns.issubset(comparison.columns):
+        salon = pd.to_numeric(comparison["salon"], errors="coerce")
+        delivery = pd.to_numeric(comparison["delivery"], errors="coerce")
+        pct = pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce")
+        compared_items = int((salon.notna() & delivery.notna() & (salon != 0) & pct.notna()).sum())
     else:
         compared_items = 0
 

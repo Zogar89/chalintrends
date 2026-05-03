@@ -143,3 +143,33 @@ def test_salon_delivery_average_surcharge_uses_latest_items_with_both_prices():
     assert round(lomo["delivery_pct_over_salon"], 2) == 30
     assert pd.isna(pollo["delivery_pct_over_salon"])
     assert analytics.average_delivery_pct_over_salon(comparison) == 20
+
+
+def test_average_delivery_surcharge_ignores_rows_missing_one_price_list_even_when_pct_is_zero():
+    comparison = pd.DataFrame(
+        [
+            {
+                "product_name": "Asado",
+                "salon": 1000,
+                "delivery": 1200,
+                "delivery_minus_salon": 200,
+                "delivery_pct_over_salon": 20,
+            },
+            {
+                "product_name": "Pollo",
+                "salon": 1500,
+                "delivery": pd.NA,
+                "delivery_minus_salon": 0,
+                "delivery_pct_over_salon": 0,
+            },
+            {
+                "product_name": "Morcilla",
+                "salon": pd.NA,
+                "delivery": 900,
+                "delivery_minus_salon": 0,
+                "delivery_pct_over_salon": 0,
+            },
+        ]
+    )
+
+    assert analytics.average_delivery_pct_over_salon(comparison) == 20
