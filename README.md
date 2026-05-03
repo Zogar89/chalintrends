@@ -18,8 +18,9 @@ python scripts/update_prices.py
 
 ## Migrate price storage
 
-`data/prices.csv` is stored as one row per day with all products in `items_json`.
-To migrate an older row-per-product CSV:
+`data/prices.csv` is stored as one human-readable row per day. Product data is spread
+across columns named like `salon | Asado | price` and `delivery | Asado | price_text`.
+To migrate an older row-per-product CSV, or the intermediate `items_json` snapshot format:
 
 ```powershell
 python scripts/migrate_prices_csv.py

@@ -19,3 +19,4 @@ __pycache__/
 output/
 chalintrends/assets/category_icons/
 data/*.long-backup.csv
+data/*.long-backup-*.csv

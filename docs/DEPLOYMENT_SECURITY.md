@@ -14,7 +14,7 @@ This repo is prepared for deployment to Streamlit Community Cloud from GitHub.
 
 ## Security review summary
 
-No application secrets are currently required. The app reads public price data, stores it in `data/prices.csv`, and renders the dashboard from that CSV. The committed CSV is stored as one row per day with all products in `items_json`; the app expands it to row-per-product data at load time.
+No application secrets are currently required. The app reads public price data, stores it in `data/prices.csv`, and renders the dashboard from that CSV. The committed CSV is stored as one human-readable row per day with product/list columns, such as `salon | Asado | price`; the app expands it to row-per-product data at load time.
 
 Checked before deployment:
 
@@ -25,7 +25,7 @@ Checked before deployment:
 - The daily workflow uses the narrow permission it needs, `contents: write`, because it commits `data/prices.csv`.
 - The daily workflow pins GitHub Actions to full commit SHAs and installs through `constraints.txt`.
 - The daily workflow now runs tests before committing a data update.
-- `data/prices.csv` stores one row per day, reducing repeated date/capture metadata in the committed file.
+- `data/prices.csv` stores one human-readable row per day, reducing repeated date/capture metadata in the committed file.
 - User/data strings rendered through custom HTML are escaped in the Streamlit HTML helpers.
 - The custom live-search component does not inject external HTML; it renders a local input and sends its value back to Streamlit.
 - The Chalin API parser is tolerant of malformed individual products: it skips those records with warnings and continues with usable rows. It fails the workflow only if the response is globally unusable, such as invalid JSON, missing `data.listas`, no Salon/Delivery lists, or no valid product rows.
@@ -99,7 +99,7 @@ Before enabling the daily data refresh:
 
 ## Operational notes
 
-- `data/prices.csv` is intentionally committed so Streamlit Cloud can serve the latest data without a database. It uses one row per day with product items stored as JSON.
+- `data/prices.csv` is intentionally committed so Streamlit Cloud can serve the latest data without a database. It uses one row per day with product/list fields stored in readable columns.
 - The daily workflow should be the only automated writer to `data/prices.csv`.
 - If the CSV grows too large, move history storage to a database or object storage and use Streamlit secrets for credentials.
 - If Chalin changes the API or pricing categories, update tests before trusting new data.

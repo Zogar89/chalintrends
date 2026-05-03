@@ -2,7 +2,9 @@ from datetime import date, datetime, timezone
 
 import pandas as pd
 
-from chalintrends.storage import COLUMNS, SNAPSHOT_COLUMNS, append_daily_snapshot, load_prices
+from chalintrends.storage import COLUMNS, append_daily_snapshot, load_prices
+
+SNAPSHOT_BASE_COLUMNS = ["date", "captured_at"]
 
 
 def test_append_daily_snapshot_replaces_existing_snapshot_for_same_date(tmp_path):
@@ -45,10 +47,20 @@ def test_append_daily_snapshot_replaces_existing_snapshot_for_same_date(tmp_path
         captured_at=datetime(2026, 4, 28, 12, 5, tzinfo=timezone.utc),
     )
 
-    raw = pd.read_csv(csv_path)
-    assert raw.columns.tolist() == SNAPSHOT_COLUMNS
+    raw = pd.read_csv(csv_path, dtype=str)
+    assert raw.columns.tolist() == [
+        *SNAPSHOT_BASE_COLUMNS,
+        "salon | Asado | source_category",
+        "salon | Asado | category",
+        "salon | Asado | product_id",
+        "salon | Asado | price_text",
+        "salon | Asado | price",
+        "salon | Asado | source_url",
+    ]
     assert len(raw) == 1
     assert raw.loc[0, "date"] == "2026-04-28"
+    assert raw.loc[0, "salon | Asado | price_text"] == "16.499"
+    assert raw.loc[0, "salon | Asado | price"] == "16499"
 
     df = load_prices(csv_path)
     assert len(df) == 1
@@ -86,7 +98,7 @@ def test_load_prices_migrates_legacy_category_to_source_category(tmp_path):
     assert loaded.loc[0, "category"] == "Vacuno premium"
 
 
-def test_load_prices_reads_snapshot_rows_with_items_json(tmp_path):
+def test_load_prices_reads_human_readable_snapshot_rows(tmp_path):
     csv_path = tmp_path / "prices.csv"
     append_daily_snapshot(
         csv_path,
@@ -116,18 +128,60 @@ def test_load_prices_reads_snapshot_rows_with_items_json(tmp_path):
         captured_at=datetime(2026, 4, 28, 12, 0, tzinfo=timezone.utc),
     )
 
-    raw = pd.read_csv(csv_path)
+    raw = pd.read_csv(csv_path, dtype=str)
     loaded = load_prices(csv_path)
 
-    assert raw.columns.tolist() == SNAPSHOT_COLUMNS
+    assert "items_json" not in raw.columns
+    assert raw.columns.tolist() == [
+        *SNAPSHOT_BASE_COLUMNS,
+        "delivery | Asado | source_category",
+        "delivery | Asado | category",
+        "delivery | Asado | product_id",
+        "delivery | Asado | price_text",
+        "delivery | Asado | price",
+        "delivery | Asado | source_url",
+        "salon | Asado | source_category",
+        "salon | Asado | category",
+        "salon | Asado | product_id",
+        "salon | Asado | price_text",
+        "salon | Asado | price",
+        "salon | Asado | source_url",
+    ]
     assert len(raw) == 1
+    assert raw.loc[0, "salon | Asado | price_text"] == "15.999"
+    assert raw.loc[0, "delivery | Asado | price_text"] == "17.499"
     assert len(loaded) == 2
     assert loaded["date"].tolist() == ["2026-04-28", "2026-04-28"]
     assert loaded["captured_at"].tolist() == [
         "2026-04-28T12:00:00+00:00",
         "2026-04-28T12:00:00+00:00",
     ]
-    assert loaded["price_list"].tolist() == ["salon", "delivery"]
+    assert loaded["price_list"].tolist() == ["delivery", "salon"]
+
+
+def test_load_prices_reads_intermediate_items_json_snapshots(tmp_path):
+    csv_path = tmp_path / "prices.csv"
+    pd.DataFrame(
+        [
+            {
+                "date": "2026-04-28",
+                "captured_at": "2026-04-28T12:00:00+00:00",
+                "items_json": (
+                    '[{"price_list":"salon","source_category":"Carnes","category":"Vacuno medio",'
+                    '"product_id":"asado-id","product_name":"Asado","price_text":"15.999",'
+                    '"price":15999,"source_url":"source"}]'
+                ),
+            }
+        ]
+    ).to_csv(csv_path, index=False)
+
+    loaded = load_prices(csv_path)
+
+    assert loaded.columns.tolist() == COLUMNS
+    assert loaded.loc[0, "date"] == "2026-04-28"
+    assert loaded.loc[0, "price_list"] == "salon"
+    assert loaded.loc[0, "product_name"] == "Asado"
+    assert loaded.loc[0, "price"] == 15999
 
 
 def test_append_daily_snapshot_neutralizes_csv_formula_cells(tmp_path):
