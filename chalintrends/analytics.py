@@ -90,10 +90,15 @@ def salon_delivery_comparison(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def average_delivery_pct_over_salon(comparison: pd.DataFrame) -> float | None:
-    if comparison.empty or "delivery_pct_over_salon" not in comparison.columns:
+    required_columns = {"salon", "delivery", "delivery_pct_over_salon"}
+    if comparison.empty or not required_columns.issubset(comparison.columns):
         return None
 
-    values = pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce").dropna()
+    salon = pd.to_numeric(comparison["salon"], errors="coerce")
+    delivery = pd.to_numeric(comparison["delivery"], errors="coerce")
+    pct = pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce")
+    complete_pair = salon.notna() & delivery.notna() & (salon != 0)
+    values = pct[complete_pair].dropna()
     if values.empty:
         return None
     return float(values.mean())
