@@ -79,3 +79,32 @@ def test_load_prices_migrates_legacy_category_to_source_category(tmp_path):
     assert loaded.columns.tolist() == COLUMNS
     assert loaded.loc[0, "source_category"] == "Carnes"
     assert loaded.loc[0, "category"] == "Vacuno premium"
+
+
+def test_append_daily_snapshot_neutralizes_csv_formula_cells(tmp_path):
+    csv_path = tmp_path / "prices.csv"
+    append_daily_snapshot(
+        csv_path,
+        [
+            {
+                "price_list": "salon",
+                "source_category": "\tCarnes",
+                "category": "Sin categorizar",
+                "product_id": "-formula-id",
+                "product_name": "=1+1",
+                "price_text": "+1+1",
+                "price": 15999,
+                "source_url": "@SUM(1,1)",
+            }
+        ],
+        snapshot_date=date(2026, 4, 28),
+        captured_at=datetime(2026, 4, 28, 12, 0, tzinfo=timezone.utc),
+    )
+
+    raw = pd.read_csv(csv_path, dtype=str)
+
+    assert raw.loc[0, "source_category"] == "'\tCarnes"
+    assert raw.loc[0, "product_id"] == "'-formula-id"
+    assert raw.loc[0, "product_name"] == "'=1+1"
+    assert raw.loc[0, "price_text"] == "'+1+1"
+    assert raw.loc[0, "source_url"] == "'@SUM(1,1)"

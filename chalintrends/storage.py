@@ -20,6 +20,7 @@ COLUMNS = [
     "source_url",
     "captured_at",
 ]
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 
 
 def load_prices(csv_path: Path) -> pd.DataFrame:
@@ -48,6 +49,19 @@ def normalize_price_rows(rows: pd.DataFrame) -> pd.DataFrame:
     return normalized[COLUMNS]
 
 
+def neutralize_csv_formula(value: Any) -> Any:
+    if isinstance(value, str) and value.startswith(CSV_FORMULA_PREFIXES):
+        return "'" + value
+    return value
+
+
+def neutralize_csv_formulas(rows: pd.DataFrame) -> pd.DataFrame:
+    neutralized = rows.copy()
+    for column in neutralized.select_dtypes(include=["object", "string"]).columns:
+        neutralized[column] = neutralized[column].map(neutralize_csv_formula)
+    return neutralized
+
+
 def append_daily_snapshot(
     csv_path: Path,
     rows: list[dict[str, Any]],
@@ -70,5 +84,5 @@ def append_daily_snapshot(
         previous_days = existing[existing["date"] != date_text]
 
     combined = pd.concat([previous_days, daily], ignore_index=True)
-    combined.to_csv(csv_path, index=False)
+    neutralize_csv_formulas(combined).to_csv(csv_path, index=False)
     return True

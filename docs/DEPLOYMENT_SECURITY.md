@@ -23,6 +23,7 @@ Checked before deployment:
 - The GitHub Actions daily workflow is not triggered by pull requests. It only runs on schedule or manual dispatch.
 - The CI workflow has read-only repository permissions.
 - The daily workflow uses the narrow permission it needs, `contents: write`, because it commits `data/prices.csv`.
+- The daily workflow pins GitHub Actions to full commit SHAs and installs through `constraints.txt`.
 - The daily workflow now runs tests before committing a data update.
 - User/data strings rendered through custom HTML are escaped in the Streamlit HTML helpers.
 - The custom live-search component does not inject external HTML; it renders a local input and sends its value back to Streamlit.
@@ -32,7 +33,7 @@ Checked before deployment:
 Known residual risks:
 
 - The scraper still depends on the public Chalin API. Minor product-level issues are skipped with warnings; broad contract changes should fail the GitHub Action before committing data. Review `Sin categorizar` after deploys to classify newly added products.
-- GitHub Actions uses version tags like `actions/checkout@v4` and `actions/setup-python@v5`. For maximum supply-chain hardening, pin those actions to full commit SHAs later.
+- Keep the pinned GitHub Action SHAs and `constraints.txt` versions reviewed during dependency maintenance.
 - The app is not authenticated at the application layer. Use Streamlit Community Cloud sharing settings if the deployed app should be private.
 
 ## GitHub setup
