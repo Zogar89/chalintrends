@@ -18,13 +18,12 @@ COLUMNS = [
     "product_name",
     "price_text",
     "price",
-    "source_url",
     "captured_at",
 ]
 ITEM_COLUMNS = [column for column in COLUMNS if column not in {"date", "captured_at"}]
 SNAPSHOT_BASE_COLUMNS = ["date", "captured_at"]
 JSON_SNAPSHOT_COLUMNS = [*SNAPSHOT_BASE_COLUMNS, "items_json"]
-WIDE_ITEM_FIELDS = ["source_category", "category", "product_id", "price_text", "price", "source_url"]
+WIDE_ITEM_FIELDS = ["source_category", "category", "product_id", "price_text", "price"]
 CSV_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
 SNAPSHOT_COLUMN_SEPARATOR = " | "
 

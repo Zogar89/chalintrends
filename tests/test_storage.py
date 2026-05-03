@@ -55,7 +55,6 @@ def test_append_daily_snapshot_replaces_existing_snapshot_for_same_date(tmp_path
         "salon | Asado | product_id",
         "salon | Asado | price_text",
         "salon | Asado | price",
-        "salon | Asado | source_url",
     ]
     assert len(raw) == 1
     assert raw.loc[0, "date"] == "2026-04-28"
@@ -139,13 +138,11 @@ def test_load_prices_reads_human_readable_snapshot_rows(tmp_path):
         "delivery | Asado | product_id",
         "delivery | Asado | price_text",
         "delivery | Asado | price",
-        "delivery | Asado | source_url",
         "salon | Asado | source_category",
         "salon | Asado | category",
         "salon | Asado | product_id",
         "salon | Asado | price_text",
         "salon | Asado | price",
-        "salon | Asado | source_url",
     ]
     assert len(raw) == 1
     assert raw.loc[0, "salon | Asado | price_text"] == "15.999"
@@ -210,4 +207,4 @@ def test_append_daily_snapshot_neutralizes_csv_formula_cells(tmp_path):
     assert loaded.loc[0, "product_id"] == "'-formula-id"
     assert loaded.loc[0, "product_name"] == "'=1+1"
     assert loaded.loc[0, "price_text"] == "'+1+1"
-    assert loaded.loc[0, "source_url"] == "'@SUM(1,1)"
+    assert "source_url" not in loaded.columns

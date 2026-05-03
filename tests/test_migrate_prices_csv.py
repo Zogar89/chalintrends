@@ -6,6 +6,18 @@ from chalintrends.storage import COLUMNS, append_daily_snapshot, load_prices
 from scripts.migrate_prices_csv import migrate_prices_csv
 
 SNAPSHOT_BASE_COLUMNS = ["date", "captured_at"]
+LEGACY_COLUMNS = [
+    "date",
+    "price_list",
+    "source_category",
+    "category",
+    "product_id",
+    "product_name",
+    "price_text",
+    "price",
+    "source_url",
+    "captured_at",
+]
 
 
 def test_migrate_prices_csv_converts_legacy_rows_to_daily_snapshots(tmp_path):
@@ -50,7 +62,7 @@ def test_migrate_prices_csv_converts_legacy_rows_to_daily_snapshots(tmp_path):
                 "captured_at": "2026-04-29T12:00:00+00:00",
             },
         ],
-        columns=COLUMNS,
+        columns=LEGACY_COLUMNS,
     )
     legacy.to_csv(csv_path, index=False)
 
@@ -67,21 +79,22 @@ def test_migrate_prices_csv_converts_legacy_rows_to_daily_snapshots(tmp_path):
         "delivery | Asado | product_id",
         "delivery | Asado | price_text",
         "delivery | Asado | price",
-        "delivery | Asado | source_url",
         "salon | Asado | source_category",
         "salon | Asado | category",
         "salon | Asado | product_id",
         "salon | Asado | price_text",
         "salon | Asado | price",
-        "salon | Asado | source_url",
     ]
     assert raw["date"].tolist() == ["2026-04-28", "2026-04-29"]
     assert raw.loc[0, "salon | Asado | price"] == 15999
     assert raw.loc[0, "delivery | Asado | price"] == 17499
     assert raw.loc[1, "salon | Asado | price"] == 16499
+    assert "source_url" not in loaded.columns
     assert len(loaded) == len(legacy)
     loaded_records = loaded[COLUMNS].sort_values(["date", "price_list", "product_name"]).reset_index(drop=True)
-    legacy_records = legacy.sort_values(["date", "price_list", "product_name"]).reset_index(drop=True)
+    legacy_records = (
+        legacy.drop(columns=["source_url"]).sort_values(["date", "price_list", "product_name"]).reset_index(drop=True)
+    )
     assert loaded_records.to_dict("records") == legacy_records.to_dict("records")
     assert backup.to_dict("records") == legacy.to_dict("records")
 
@@ -132,7 +145,7 @@ def test_migrate_prices_csv_does_not_overwrite_existing_default_backup(tmp_path)
                 "captured_at": "2026-04-28T12:00:00+00:00",
             }
         ],
-        columns=COLUMNS,
+        columns=LEGACY_COLUMNS,
     ).to_csv(csv_path, index=False)
 
     migrate_prices_csv(csv_path)
