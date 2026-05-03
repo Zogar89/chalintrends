@@ -7,7 +7,12 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from chalintrends.analytics import category_daily_prices, latest_offers
+from chalintrends.analytics import (
+    average_delivery_pct_over_salon,
+    category_daily_prices,
+    latest_offers,
+    salon_delivery_comparison,
+)
 from chalintrends.categories import category_sort_key, is_top_seller, sort_category_names
 from chalintrends.live_search import live_search_input
 from chalintrends.mock_data import generate_mock_history
@@ -838,6 +843,76 @@ def inject_styles() -> None:
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
           gap: 8px;
+        }
+
+        .delivery-surcharge-card {
+          align-items: center;
+          background: #fffdf8;
+          border: 1px solid #eadfce;
+          border-radius: 8px;
+          box-shadow: 0 8px 18px rgba(23,32,51,.04);
+          display: grid;
+          gap: 10px;
+          grid-template-columns: minmax(0, 1fr) auto;
+          margin: 0 0 10px;
+          padding: 13px 14px;
+        }
+
+        .delivery-surcharge-label {
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 850;
+          letter-spacing: .06em;
+          text-transform: uppercase;
+        }
+
+        .delivery-surcharge-value {
+          color: var(--red);
+          font-size: 30px;
+          font-weight: 950;
+          line-height: 1;
+          margin-top: 3px;
+        }
+
+        .delivery-surcharge-value.trend-down {
+          color: var(--green);
+        }
+
+        .delivery-surcharge-value.trend-flat {
+          color: var(--gold);
+        }
+
+        .delivery-surcharge-caption {
+          color: var(--muted);
+          font-size: 12px;
+          font-weight: 720;
+          line-height: 1.25;
+          margin-top: 5px;
+        }
+
+        .delivery-surcharge-icon {
+          align-items: center;
+          background: rgba(168,45,37,.08);
+          border: 1px solid rgba(168,45,37,.24);
+          border-radius: 999px;
+          color: var(--red);
+          display: inline-flex;
+          font-size: 26px;
+          height: 48px;
+          justify-content: center;
+          width: 48px;
+        }
+
+        .delivery-surcharge-icon.trend-down {
+          background: rgba(11,122,72,.08);
+          border-color: rgba(11,122,72,.24);
+          color: var(--green);
+        }
+
+        .delivery-surcharge-icon.trend-flat {
+          background: rgba(192,137,46,.1);
+          border-color: rgba(192,137,46,.28);
+          color: var(--gold);
         }
 
         .compare-card {
@@ -1676,6 +1751,45 @@ def render_comparison(comparison: pd.DataFrame, max_rows: int | None = None) -> 
     st.markdown(f'<div class="comparison-grid">{"".join(rows_html)}</div>', unsafe_allow_html=True)
 
 
+def render_delivery_surcharge_card(comparison: pd.DataFrame) -> None:
+    average_pct = average_delivery_pct_over_salon(comparison)
+    if "delivery_pct_over_salon" in comparison.columns:
+        compared_items = int(pd.to_numeric(comparison["delivery_pct_over_salon"], errors="coerce").notna().sum())
+    else:
+        compared_items = 0
+
+    if average_pct is None:
+        value = "Sin datos"
+        tone_class = "trend-flat"
+        icon = "remove"
+        caption = "Faltan items con precio en Salon y Delivery."
+    else:
+        value = format_trend_percent(average_pct)
+        if average_pct > 0:
+            tone_class = "trend-up"
+            icon = "trending_up"
+        elif average_pct < 0:
+            tone_class = "trend-down"
+            icon = "trending_down"
+        else:
+            tone_class = "trend-flat"
+            icon = "remove"
+        item_label = "item" if compared_items == 1 else "items"
+        caption = f"Promedio simple de {compared_items} {item_label} con precio en ambas listas."
+
+    st.markdown(
+        '<div class="delivery-surcharge-card">'
+        '<div>'
+        '<div class="delivery-surcharge-label">Recargo promedio Delivery</div>'
+        f'<div class="delivery-surcharge-value {tone_class}">{escape(value)}</div>'
+        f'<div class="delivery-surcharge-caption">{escape(caption)}</div>'
+        '</div>'
+        f'<span class="material-symbols-rounded delivery-surcharge-icon {tone_class}">{icon}</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
 st.set_page_config(
     page_title="ChalinTrends",
     page_icon=":material/monitoring:",
@@ -1902,15 +2016,9 @@ elif page == "Comparar cortes":
 elif page == "Salon vs Delivery":
     render_section("Salon vs Delivery", "Diferencia actual por producto")
     latest_prices = prices[prices["date"] == prices["date"].max()]
+    overall_comparison = salon_delivery_comparison(latest_prices)
     if query:
         latest_prices = filter_products(latest_prices, query)
-    comparison = latest_prices.pivot_table(index="product_name", columns="price_list", values="price", aggfunc="last")
-    comparison = comparison.dropna(how="all")
-    if {"salon", "delivery"}.issubset(comparison.columns):
-        comparison["delivery_minus_salon"] = comparison["delivery"] - comparison["salon"]
-        comparison["delivery_pct_over_salon"] = (
-            comparison["delivery_minus_salon"] / comparison["salon"] * 100
-        )
-        comparison = comparison.sort_values("delivery_minus_salon", ascending=False)
-    comparison = comparison.reset_index()
+    comparison = salon_delivery_comparison(latest_prices)
+    render_delivery_surcharge_card(overall_comparison)
     render_comparison(comparison)
