@@ -2,8 +2,8 @@ name: Daily prices
 
 on:
   schedule:
-    # 07:00, 10:00, 14:00, 18:00 America/Argentina/Buenos_Aires
-    - cron: "0 10,13,17,21 * * *"
+    # 12:00 America/Argentina/Buenos_Aires
+    - cron: "0 15 * * *"
   workflow_dispatch:
 
 permissions:
