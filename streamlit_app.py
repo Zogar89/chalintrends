@@ -20,6 +20,8 @@ from chalintrends.search import filter_products, product_matches
 from chalintrends.storage import load_prices
 
 DATA_PATH = Path("data/prices.csv")
+DISPLAY_WINDOW_DAYS = 90
+DISPLAY_WINDOW_LABEL = "3 meses"
 PRICE_LIST_LABELS = {"salon": "Salon", "delivery": "Delivery"}
 NAV_OPTIONS = ["Listado", "Ofertas", "Categorias", "Comparar cortes", "Salon vs Delivery"]
 PAGE_SLUGS = {
@@ -40,7 +42,7 @@ NAV_ICONS = {
 SECTION_ICONS = {
     "Listado": "view_list",
     "Ofertas primero": "local_offer",
-    "Bajaron vs hace 30 dias": "trending_down",
+    "Bajaron en 3 meses": "trending_down",
     "Tendencia por categoria": "bar_chart",
     "Comparar cortes": "monitoring",
     "Salon vs Delivery": "compare_arrows",
@@ -1267,7 +1269,7 @@ def category_trend_card_html(offers: pd.DataFrame) -> str:
     return (
         '<section class="trend-summary-panel category-trend-card">'
         '<div class="trend-panel-head"><span class="material-symbols-rounded inline-icon">monitoring</span>'
-        'Tendencia General 30d</div>'
+        f'Tendencia General {DISPLAY_WINDOW_LABEL}</div>'
         f'<div class="trend-category-breakdown">{"".join(breakdown_rows)}</div>'
         '</section>'
     )
@@ -1299,7 +1301,7 @@ def top_movers_card_html(offers: pd.DataFrame, *, direction: str) -> str:
         f'<div class="trend-panel-head">{escape(title)}</div>'
         f'<span class="material-symbols-rounded trend-summary-icon">{icon}</span>'
         f'<div class="top-mover-list">{rows_html}</div>'
-        '<div class="top-mover-caption">Comparado con hace 30 dias</div>'
+        f'<div class="top-mover-caption">Comparado con hace {DISPLAY_WINDOW_LABEL}</div>'
         '</section>'
     )
 
@@ -1338,8 +1340,8 @@ def render_price_rows(
     max_rows: int,
     empty_text: str,
     base_mode: bool = False,
-    comparison_label: str = "hace 30 dias",
-    waiting_label: str = "30 dias de historial",
+    comparison_label: str = f"hace {DISPLAY_WINDOW_LABEL}",
+    waiting_label: str = f"{DISPLAY_WINDOW_LABEL} de historial",
 ) -> None:
     if df.empty:
         st.markdown(
@@ -1449,9 +1451,9 @@ def render_grouped_listing(
         cards_html = []
         for _, row in group.iterrows():
             change_meta = (
-                "esperando 30 dias de historial"
+                f"esperando {DISPLAY_WINDOW_LABEL} de historial"
                 if pd.isna(row.get("change"))
-                else f"{money_delta(row.get('change'))} vs 30 dias"
+                else f"{money_delta(row.get('change'))} vs {DISPLAY_WINDOW_LABEL}"
             )
             badge_html = trend_badge_html(row.get("change"), row.get("change_pct"))
 
@@ -1903,7 +1905,7 @@ with st.sidebar:
 
 page = st.session_state["page"]
 
-offers = latest_offers(prices, price_list=price_list, window_days=30)
+offers = latest_offers(prices, price_list=price_list, window_days=DISPLAY_WINDOW_DAYS)
 weekly_offers = latest_offers(prices, price_list=price_list, window_days=7)
 
 if page == "Listado":
@@ -1929,7 +1931,7 @@ if query:
 
 if page == "Listado":
     render_section("Listado", f"Todos los productos de {PRICE_LIST_LABELS[price_list]}")
-    sparklines = build_sparkline_lookup(prices, price_list=price_list, days=30)
+    sparklines = build_sparkline_lookup(prices, price_list=price_list, days=DISPLAY_WINDOW_DAYS)
     render_grouped_listing(
         offers,
         empty_text="No hay productos para esta busqueda.",
@@ -1945,7 +1947,7 @@ elif page == "Ofertas":
     if history_days < 2:
         baseline = offers.sort_values("price", ascending=False) if not offers.empty else offers
         st.markdown(
-            '<div class="product-meta" style="margin-bottom: 8px;">Primer snapshot: esto es la linea base. Con mas historial aparecen bajas semanales y de 30 dias.</div>',
+            f'<div class="product-meta" style="margin-bottom: 8px;">Primer snapshot: esto es la linea base. Con mas historial aparecen bajas semanales y de {DISPLAY_WINDOW_LABEL}.</div>',
             unsafe_allow_html=True,
         )
         render_price_rows(
@@ -1967,14 +1969,14 @@ elif page == "Ofertas":
             waiting_label="7 dias de historial",
         )
 
-        render_section("Bajaron en 30 dias", "Comparado contra el registro de hace 30 dias.")
+        render_section(f"Bajaron en {DISPLAY_WINDOW_LABEL}", f"Comparado contra el registro de hace {DISPLAY_WINDOW_LABEL}.")
         drops = offers[offers["dropped_since_comparison"]] if not offers.empty else offers
         render_price_rows(
             drops.sort_values("change_pct", ascending=True, na_position="last") if not drops.empty else drops,
             max_rows=10,
-            empty_text="Todavia no hay bajas registradas en 30 dias.",
-            comparison_label="hace 30 dias",
-            waiting_label="30 dias de historial",
+            empty_text=f"Todavia no hay bajas registradas en {DISPLAY_WINDOW_LABEL}.",
+            comparison_label=f"hace {DISPLAY_WINDOW_LABEL}",
+            waiting_label=f"{DISPLAY_WINDOW_LABEL} de historial",
         )
 
 elif page == "Categorias":
